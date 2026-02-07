@@ -15,19 +15,38 @@ import bpy
 from mathutils import Vector
 from typing import List, Optional, Dict
 
-from .revashelf_specs import (
-    CABINET_SPECS,
-    TRAY_SPECS,
-    SHAPE_AVAILABILITY,
-    SHAPE_NAMES,
-    SHAPE_IDS,
-    FULL_CIRCLE, KIDNEY, PIE_CUT, D_SHAPE, HALF_MOON,
-    FF, FL,
-    get_cabinet_dims,
-    get_tray_spec,
-    get_available_shapes,
-    get_all_bc_codes,
-)
+try:
+    from .revashelf_specs import (
+        CABINET_SPECS,
+        TRAY_SPECS,
+        SHAPE_AVAILABILITY,
+        SHAPE_NAMES,
+        SHAPE_IDS,
+        FULL_CIRCLE, KIDNEY, PIE_CUT, D_SHAPE, HALF_MOON,
+        FF, FL,
+        get_cabinet_dims,
+        get_tray_spec,
+        get_available_shapes,
+        get_all_bc_codes,
+    )
+    _HAS_SPECS = True
+except ImportError:
+    _HAS_SPECS = False
+    # Define constants so the module can be imported without error.
+    # Functions that require specs will raise a clear error at runtime.
+    FULL_CIRCLE, KIDNEY, PIE_CUT, D_SHAPE, HALF_MOON = 0, 1, 2, 3, 4
+    FF, FL = "FF", "FL"
+    SHAPE_NAMES = {}
+
+
+def _require_specs(func_name: str) -> None:
+    """Raise an informative error if proprietary specs are not available."""
+    if not _HAS_SPECS:
+        raise RuntimeError(
+            f"{func_name}() requires revashelf_specs.py which is not included "
+            f"in the public repository. Place the file in "
+            f"addons/cabinet-generator/src/ to enable batch lazy susan generation."
+        )
 
 
 # Map shape constants to style enum values (matching GN Style input)
@@ -97,6 +116,7 @@ def generate_single_cabinet(
     Returns:
         Created Blender object, or None if spec not found.
     """
+    _require_specs("generate_single_cabinet")
     _ensure_nodegroups()
 
     # Look up specs
@@ -183,6 +203,7 @@ def generate_lazy_susan_batch(
     Returns:
         List of created Blender objects.
     """
+    _require_specs("generate_lazy_susan_batch")
     _ensure_nodegroups()
 
     # Defaults
@@ -269,6 +290,7 @@ def generate_all_configurations(
     Returns:
         List of created objects.
     """
+    _require_specs("generate_all_configurations")
     return generate_lazy_susan_batch(
         bc_codes=get_all_bc_codes(),
         shapes=None,  # All available shapes per code
@@ -280,6 +302,7 @@ def generate_all_configurations(
 
 def print_batch_summary():
     """Print a summary of what generate_all_configurations would create."""
+    _require_specs("print_batch_summary")
     total = 0
     for code in get_all_bc_codes():
         available = get_available_shapes(code)
@@ -391,6 +414,10 @@ class CABINET_OT_BatchLazySusan(bpy.types.Operator):
         row.prop(self, "use_half_moon", toggle=True)
 
     def execute(self, context):
+        if not _HAS_SPECS:
+            self.report({'ERROR'}, "Product specs not installed. See addon documentation.")
+            return {'CANCELLED'}
+
         # Build BC code list
         bc_map = {
             "BC16": self.use_bc16, "BC18": self.use_bc18,

@@ -1,0 +1,68 @@
+# =============================================================================
+# ZDC Blender Tools — .gitignore
+# =============================================================================
+
+# Private / confidential files (NEVER commit these)
+CLAUDE.local.md
+reference/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Blender backup files
+*.blend1
+*.blend2
+*.blend3
+*.blend4
+*.blend5
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Python virtual environments
+.env
+.venv/
+env/
+venv/
+
+# Test outputs and artifacts
+tests/output/
+test_log.json
+test_report.json
+*.log
+
+# Node modules (if any JS tooling is used)
+node_modules/
+
+# Home Builder 4.5 original directory (kept until monorepo verified)
+home-builder-4.5/
+
+# macOS Finder icon resource files
+Icon?
+Icon
+
+# Nested .claude directories (keep root only)
+addons/**/.claude/

@@ -674,7 +674,7 @@ def update_texture(self, context):
 # PROPERTY GROUP
 # =============================================================================
 
-class UniversalPBRProperties(PropertyGroup):
+class ZDC_PG_UniversalPBR_settings(PropertyGroup):
     """All properties for the Universal PBR Shader."""
 
     # =========================================================================
@@ -1362,9 +1362,9 @@ class UniversalPBRProperties(PropertyGroup):
 # UI PANELS
 # =============================================================================
 
-class MATERIAL_PT_upbr_main(Panel):
+class ZDC_PT_UniversalPBR_main(Panel):
     bl_label = "Universal PBR Shader v1.0.0"
-    bl_idname = "MATERIAL_PT_upbr_main"
+    bl_idname = "ZDC_PT_UniversalPBR_main"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
@@ -1381,18 +1381,18 @@ class MATERIAL_PT_upbr_main(Panel):
         if mat.use_nodes and "Universal PBR Shader v1.0.0" in mat.node_tree.nodes:
             row = layout.row()
             row.label(text="Shader Active", icon='CHECKMARK')
-            row.operator("material.create_universal_pbr", text="Rebuild", icon='FILE_REFRESH')
+            row.operator("zdc.universalpbr_create", text="Rebuild", icon='FILE_REFRESH')
         else:
-            layout.operator("material.create_universal_pbr", text="Create Universal PBR Material", icon='MATERIAL')
+            layout.operator("zdc.universalpbr_create", text="Create Universal PBR Material", icon='MATERIAL')
 
 
-class MATERIAL_PT_upbr_presets(Panel):
+class ZDC_PT_UniversalPBR_presets(Panel):
     bl_label = "Presets"
-    bl_idname = "MATERIAL_PT_upbr_presets"
+    bl_idname = "ZDC_PT_UniversalPBR_presets"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_main"
+    bl_parent_id = "ZDC_PT_UniversalPBR_main"
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
@@ -1409,7 +1409,7 @@ class MATERIAL_PT_upbr_presets(Panel):
         layout.label(text="Built-in Presets:")
         col = layout.column(align=True)
         for key, preset in BUILTIN_PRESETS.items():
-            op = col.operator("material.upbr_apply_preset", text=preset["name"])
+            op = col.operator("zdc.universalpbr_apply_preset", text=preset["name"])
             op.preset_id = f"BUILTIN_{key}"
 
         # User presets
@@ -1420,22 +1420,22 @@ class MATERIAL_PT_upbr_presets(Panel):
             col = layout.column(align=True)
             for key, preset in user_presets.items():
                 row = col.row(align=True)
-                op = row.operator("material.upbr_apply_preset", text=preset["name"])
+                op = row.operator("zdc.universalpbr_apply_preset", text=preset["name"])
                 op.preset_id = f"USER_{key}"
-                op_del = row.operator("material.upbr_delete_preset", text="", icon='X')
+                op_del = row.operator("zdc.universalpbr_delete_preset", text="", icon='X')
                 op_del.preset_key = key
 
         layout.separator()
-        layout.operator("material.upbr_save_preset", text="Save Current as Preset", icon='ADD')
+        layout.operator("zdc.universalpbr_save_preset", text="Save Current as Preset", icon='ADD')
 
 
-class MATERIAL_PT_upbr_base(Panel):
+class ZDC_PT_UniversalPBR_base(Panel):
     bl_label = "Base Material"
-    bl_idname = "MATERIAL_PT_upbr_base"
+    bl_idname = "ZDC_PT_UniversalPBR_base"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_main"
+    bl_parent_id = "ZDC_PT_UniversalPBR_main"
 
     @classmethod
     def poll(cls, context):
@@ -1455,13 +1455,13 @@ class MATERIAL_PT_upbr_base(Panel):
         col.prop(props, "ior")
 
 
-class MATERIAL_PT_upbr_textures(Panel):
+class ZDC_PT_UniversalPBR_textures(Panel):
     bl_label = "Texture Maps"
-    bl_idname = "MATERIAL_PT_upbr_textures"
+    bl_idname = "ZDC_PT_UniversalPBR_textures"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_main"
+    bl_parent_id = "ZDC_PT_UniversalPBR_main"
 
     @classmethod
     def poll(cls, context):
@@ -1575,13 +1575,13 @@ class MATERIAL_PT_upbr_textures(Panel):
             box.label(text="Per-map UV overrides coming in v1.1", icon='INFO')
 
 
-class MATERIAL_PT_upbr_surface(Panel):
+class ZDC_PT_UniversalPBR_surface(Panel):
     bl_label = "Surface Effects"
-    bl_idname = "MATERIAL_PT_upbr_surface"
+    bl_idname = "ZDC_PT_UniversalPBR_surface"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_main"
+    bl_parent_id = "ZDC_PT_UniversalPBR_main"
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
@@ -1638,13 +1638,13 @@ class MATERIAL_PT_upbr_surface(Panel):
             col.prop(props, "clearcoat_roughness", text="Roughness")
 
 
-class MATERIAL_PT_upbr_sparkles(Panel):
+class ZDC_PT_UniversalPBR_sparkles(Panel):
     bl_label = "Sparkle System"
-    bl_idname = "MATERIAL_PT_upbr_sparkles"
+    bl_idname = "ZDC_PT_UniversalPBR_sparkles"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_main"
+    bl_parent_id = "ZDC_PT_UniversalPBR_main"
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
@@ -1664,13 +1664,13 @@ class MATERIAL_PT_upbr_sparkles(Panel):
         layout.enabled = props.sparkle_enable
 
 
-class MATERIAL_PT_upbr_sparkle_primary(Panel):
+class ZDC_PT_UniversalPBR_sparkle_primary(Panel):
     bl_label = "Primary Layer"
-    bl_idname = "MATERIAL_PT_upbr_sparkle_primary"
+    bl_idname = "ZDC_PT_UniversalPBR_sparkle_primary"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_sparkles"
+    bl_parent_id = "ZDC_PT_UniversalPBR_sparkles"
 
     @classmethod
     def poll(cls, context):
@@ -1696,13 +1696,13 @@ class MATERIAL_PT_upbr_sparkle_primary(Panel):
         col.prop(props, "primary_intensity", text="Intensity")
 
 
-class MATERIAL_PT_upbr_sparkle_secondary(Panel):
+class ZDC_PT_UniversalPBR_sparkle_secondary(Panel):
     bl_label = "Secondary Layer"
-    bl_idname = "MATERIAL_PT_upbr_sparkle_secondary"
+    bl_idname = "ZDC_PT_UniversalPBR_sparkle_secondary"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_sparkles"
+    bl_parent_id = "ZDC_PT_UniversalPBR_sparkles"
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
@@ -1729,13 +1729,13 @@ class MATERIAL_PT_upbr_sparkle_secondary(Panel):
         col.prop(props, "secondary_intensity", text="Intensity")
 
 
-class MATERIAL_PT_upbr_sparkle_tertiary(Panel):
+class ZDC_PT_UniversalPBR_sparkle_tertiary(Panel):
     bl_label = "Tertiary Layer"
-    bl_idname = "MATERIAL_PT_upbr_sparkle_tertiary"
+    bl_idname = "ZDC_PT_UniversalPBR_sparkle_tertiary"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_sparkles"
+    bl_parent_id = "ZDC_PT_UniversalPBR_sparkles"
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
@@ -1762,13 +1762,13 @@ class MATERIAL_PT_upbr_sparkle_tertiary(Panel):
         col.prop(props, "tertiary_intensity", text="Intensity")
 
 
-class MATERIAL_PT_upbr_sparkle_color(Panel):
+class ZDC_PT_UniversalPBR_sparkle_color(Panel):
     bl_label = "Sparkle Color"
-    bl_idname = "MATERIAL_PT_upbr_sparkle_color"
+    bl_idname = "ZDC_PT_UniversalPBR_sparkle_color"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_sparkles"
+    bl_parent_id = "ZDC_PT_UniversalPBR_sparkles"
 
     @classmethod
     def poll(cls, context):
@@ -1801,13 +1801,13 @@ class MATERIAL_PT_upbr_sparkle_color(Panel):
         col.prop(props, "fresnel_direction", text="Direction")
 
 
-class MATERIAL_PT_upbr_sparkle_response(Panel):
+class ZDC_PT_UniversalPBR_sparkle_response(Panel):
     bl_label = "Sparkle Response"
-    bl_idname = "MATERIAL_PT_upbr_sparkle_response"
+    bl_idname = "ZDC_PT_UniversalPBR_sparkle_response"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_sparkles"
+    bl_parent_id = "ZDC_PT_UniversalPBR_sparkles"
 
     @classmethod
     def poll(cls, context):
@@ -1842,13 +1842,13 @@ class MATERIAL_PT_upbr_sparkle_response(Panel):
         col.prop(props, "global_size_multiplier", text="Size Multiplier")
 
 
-class MATERIAL_PT_upbr_advanced(Panel):
+class ZDC_PT_UniversalPBR_advanced(Panel):
     bl_label = "Advanced"
-    bl_idname = "MATERIAL_PT_upbr_advanced"
+    bl_idname = "ZDC_PT_UniversalPBR_advanced"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_parent_id = "MATERIAL_PT_upbr_main"
+    bl_parent_id = "ZDC_PT_UniversalPBR_main"
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
@@ -1869,8 +1869,8 @@ class MATERIAL_PT_upbr_advanced(Panel):
 # OPERATORS
 # =============================================================================
 
-class MATERIAL_OT_create_universal_pbr(Operator):
-    bl_idname = "material.create_universal_pbr"
+class ZDC_OT_UniversalPBR_create(Operator):
+    bl_idname = "zdc.universalpbr_create"
     bl_label = "Create Universal PBR Material"
     bl_description = "Create or rebuild the Universal PBR shader node tree"
     bl_options = {'REGISTER', 'UNDO'}
@@ -1893,8 +1893,8 @@ class MATERIAL_OT_create_universal_pbr(Operator):
         return {'FINISHED'}
 
 
-class MATERIAL_OT_upbr_apply_preset(Operator):
-    bl_idname = "material.upbr_apply_preset"
+class ZDC_OT_UniversalPBR_apply_preset(Operator):
+    bl_idname = "zdc.universalpbr_apply_preset"
     bl_label = "Apply Preset"
     bl_description = "Apply a preset to the current material"
     bl_options = {'REGISTER', 'UNDO'}
@@ -1939,8 +1939,8 @@ class MATERIAL_OT_upbr_apply_preset(Operator):
         return {'FINISHED'}
 
 
-class MATERIAL_OT_upbr_save_preset(Operator):
-    bl_idname = "material.upbr_save_preset"
+class ZDC_OT_UniversalPBR_save_preset(Operator):
+    bl_idname = "zdc.universalpbr_save_preset"
     bl_label = "Save Preset"
     bl_description = "Save current settings as a user preset"
     bl_options = {'REGISTER'}
@@ -2016,8 +2016,8 @@ class MATERIAL_OT_upbr_save_preset(Operator):
         return {'FINISHED'}
 
 
-class MATERIAL_OT_upbr_delete_preset(Operator):
-    bl_idname = "material.upbr_delete_preset"
+class ZDC_OT_UniversalPBR_delete_preset(Operator):
+    bl_idname = "zdc.universalpbr_delete_preset"
     bl_label = "Delete Preset"
     bl_description = "Delete a user preset"
     bl_options = {'REGISTER'}
@@ -3553,30 +3553,30 @@ def update_textures_from_properties(mat):
 # =============================================================================
 
 classes = (
-    UniversalPBRProperties,
-    MATERIAL_OT_create_universal_pbr,
-    MATERIAL_OT_upbr_apply_preset,
-    MATERIAL_OT_upbr_save_preset,
-    MATERIAL_OT_upbr_delete_preset,
-    MATERIAL_PT_upbr_main,
-    MATERIAL_PT_upbr_presets,
-    MATERIAL_PT_upbr_base,
-    MATERIAL_PT_upbr_textures,
-    MATERIAL_PT_upbr_surface,
-    MATERIAL_PT_upbr_sparkles,
-    MATERIAL_PT_upbr_sparkle_primary,
-    MATERIAL_PT_upbr_sparkle_secondary,
-    MATERIAL_PT_upbr_sparkle_tertiary,
-    MATERIAL_PT_upbr_sparkle_color,
-    MATERIAL_PT_upbr_sparkle_response,
-    MATERIAL_PT_upbr_advanced,
+    ZDC_PG_UniversalPBR_settings,
+    ZDC_OT_UniversalPBR_create,
+    ZDC_OT_UniversalPBR_apply_preset,
+    ZDC_OT_UniversalPBR_save_preset,
+    ZDC_OT_UniversalPBR_delete_preset,
+    ZDC_PT_UniversalPBR_main,
+    ZDC_PT_UniversalPBR_presets,
+    ZDC_PT_UniversalPBR_base,
+    ZDC_PT_UniversalPBR_textures,
+    ZDC_PT_UniversalPBR_surface,
+    ZDC_PT_UniversalPBR_sparkles,
+    ZDC_PT_UniversalPBR_sparkle_primary,
+    ZDC_PT_UniversalPBR_sparkle_secondary,
+    ZDC_PT_UniversalPBR_sparkle_tertiary,
+    ZDC_PT_UniversalPBR_sparkle_color,
+    ZDC_PT_UniversalPBR_sparkle_response,
+    ZDC_PT_UniversalPBR_advanced,
 )
 
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Material.universal_pbr = PointerProperty(type=UniversalPBRProperties)
+    bpy.types.Material.universal_pbr = PointerProperty(type=ZDC_PG_UniversalPBR_settings)
 
 
 def unregister():

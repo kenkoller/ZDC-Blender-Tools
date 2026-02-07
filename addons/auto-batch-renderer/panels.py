@@ -1,10 +1,11 @@
 # Auto Batch Renderer — Panels module
-# UI panel classes
+# UI panel classes for the Render Properties sidebar
 
 import bpy
 
 
 class ABR_PT_MainPanel(bpy.types.Panel):
+    """Main panel for the Auto Batch Renderer, shown in Render Properties."""
     bl_label = "Auto Batch Renderer"
     bl_idname = "RENDER_PT_auto_batch_renderer"
     bl_space_type = 'PROPERTIES'
@@ -110,6 +111,9 @@ class ABR_PT_MainPanel(bpy.types.Panel):
             box.prop(settings, "margin")
             box.prop(settings, "use_orthographic")
             box.prop(settings, "disable_live_updates")
+            box.separator()
+            row = box.row()
+            row.operator("abr.preview_framing", text="Preview Framing", icon='CAMERA_DATA')
 
             # --- LIGHT MODIFIERS SUB-PANEL ---
             box.separator()

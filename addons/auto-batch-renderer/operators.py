@@ -5,6 +5,7 @@ import bpy
 from mathutils import Vector
 from math import radians
 import os
+import shutil
 import random
 import blf  # For drawing progress in the viewport
 
@@ -43,6 +44,7 @@ class ABR_OT_ToggleExcludeFraming(bpy.types.Operator):
 
 
 class ABR_OT_UpdateMarkers(bpy.types.Operator):
+    """Synchronize timeline markers with the current set of enabled views."""
     bl_idname = "abr.update_markers"
     bl_label = "Update Markers"
     bl_options = {'REGISTER', 'UNDO'}
@@ -67,6 +69,7 @@ class ABR_OT_UpdateMarkers(bpy.types.Operator):
 
 
 class ABR_OT_AddView(bpy.types.Operator):
+    """Add a new optional studio or application view to the render list."""
     bl_idname = "abr.add_view"
     bl_label = "Add View"
     bl_options = {'REGISTER', 'UNDO'}
@@ -101,6 +104,7 @@ class ABR_OT_AddView(bpy.types.Operator):
 
 
 class ABR_OT_RemoveView(bpy.types.Operator):
+    """Remove an optional view from the render list by index."""
     bl_idname = "abr.remove_view"
     bl_label = "Remove View"
     bl_options = {'REGISTER', 'UNDO'}
@@ -115,6 +119,7 @@ class ABR_OT_RemoveView(bpy.types.Operator):
 
 
 class ABR_OT_ClearMarkers(bpy.types.Operator):
+    """Remove all timeline markers from the scene."""
     bl_idname = "abr.clear_markers"
     bl_label = "Clear Markers"
     bl_options = {'REGISTER', 'UNDO'}
@@ -299,7 +304,88 @@ class ABR_OT_InitializeScene(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class ABR_OT_PreviewFraming(bpy.types.Operator):
+    """Preview camera framing for the selected view without rendering.
+    Uses the preview collection if set, otherwise the first child of the target collection."""
+    bl_idname = "abr.preview_framing"
+    bl_label = "Preview Camera Framing"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        s = context.scene.abr_settings
+        has_camera = s.studio_camera is not None and s.camera_controller is not None
+        has_collection = s.preview_collection is not None or s.target_collection is not None
+        return has_camera and has_collection
+
+    def execute(self, context):
+        s = context.scene.abr_settings
+        scene = context.scene
+
+        cam = s.studio_camera
+        controller = s.camera_controller
+
+        # Determine which collection to frame
+        collection = s.preview_collection
+        if not collection:
+            # Use first child of target collection, or target itself
+            if s.target_collection and s.target_collection.children:
+                children = [c for c in s.target_collection.children if c.name != "Props"]
+                collection = children[0] if children else s.target_collection
+            elif s.target_collection:
+                collection = s.target_collection
+
+        if not collection:
+            self.report({'ERROR'}, "No collection available for framing preview.")
+            return {'CANCELLED'}
+
+        # Determine which view to preview based on the current frame position
+        enabled_views = [v for v in s.views if v.enabled]
+        if not enabled_views:
+            self.report({'WARNING'}, "No enabled views to preview.")
+            return {'CANCELLED'}
+
+        # Map frame position to view index (frame 1 = first view, etc.)
+        view_index = max(0, min(scene.frame_current - 1, len(enabled_views) - 1))
+        view = enabled_views[view_index]
+
+        # Replicate the exact render_still framing logic
+        scene.frame_set(view.animation_frame)
+        controller.rotation_euler = view.camera_angle
+        context.view_layer.update()
+        depsgraph = context.evaluated_depsgraph_get()
+
+        frame_object_rig(
+            context, controller, cam, collection,
+            s.margin, depsgraph, s.use_orthographic, view.view_name
+        )
+        context.view_layer.update()
+
+        # Apply fine-tuning if enabled
+        if view.enable_fine_tune:
+            scale = view.fine_tune_scale
+            pos_offset = Vector(view.fine_tune_position)
+
+            if cam.data.type == 'ORTHO':
+                cam.data.ortho_scale /= scale
+            else:
+                cam_direction = (cam.location - controller.location).normalized()
+                current_distance = (cam.location - controller.location).length
+                new_distance = current_distance / scale
+                cam.location = controller.location + cam_direction * new_distance
+
+            world_offset = cam.matrix_world.to_quaternion() @ pos_offset
+            cam.location += world_offset
+
+        scene.camera = cam
+        context.view_layer.update()
+
+        self.report({'INFO'}, f"Camera framed for: {view.view_name} ({collection.name})")
+        return {'FINISHED'}
+
+
 class ABR_OT_CancelRender(bpy.types.Operator):
+    """Request cancellation of the currently running batch render."""
     bl_idname = "abr.cancel_render"
     bl_label = "Cancel Batch Render"
     bl_options = {'REGISTER'}
@@ -311,6 +397,12 @@ class ABR_OT_CancelRender(bpy.types.Operator):
 
 
 class ABR_OT_RenderAll(bpy.types.Operator):
+    """Render all enabled views for every child collection in the target collection.
+
+    Operates as a modal operator with a timer. For each collection, renders
+    still images for each enabled view, then optionally a turntable animation.
+    Restores all original scene settings on completion or cancellation.
+    """
     bl_idname = "abr.render_all"
     bl_label = "Render Enabled Views"
     bl_options = {'REGISTER'}
@@ -388,7 +480,8 @@ class ABR_OT_RenderAll(bpy.types.Operator):
 
             job = self.render_jobs.pop(0)
             self.process_job(context, job)
-            context.area.tag_redraw()
+            if context.area:
+                context.area.tag_redraw()
 
         return {'PASS_THROUGH'}
 
@@ -482,9 +575,22 @@ class ABR_OT_RenderAll(bpy.types.Operator):
         safe_name = bpy.path.clean_name(collection.name)
         filename = f"{safe_name}{view.suffix}"  # Extension will be added by Blender
         output_dir = os.path.join(bpy.path.abspath(s.output_path), safe_name)
-        os.makedirs(output_dir, exist_ok=True)
-        scene.render.filepath = os.path.join(output_dir, filename)
 
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+        except (PermissionError, OSError) as e:
+            print(f"ABR Error: Cannot create directory '{output_dir}': {e}")
+            return
+
+        # Check available disk space (warn below 50MB)
+        try:
+            free_space = shutil.disk_usage(output_dir).free
+            if free_space < 50 * 1024 * 1024:
+                print(f"ABR Warning: Low disk space ({free_space // (1024 * 1024)}MB free). Render may fail.")
+        except OSError:
+            pass  # disk_usage may not be available on all platforms
+
+        scene.render.filepath = os.path.join(output_dir, filename)
         bpy.ops.render.render(write_still=True)
 
     # --- KEYFRAME GENERATION HELPERS ---
@@ -819,7 +925,20 @@ class ABR_OT_RenderAll(bpy.types.Operator):
 
         safe_name = bpy.path.clean_name(collection.name)
         turntable_dir = os.path.join(bpy.path.abspath(s.output_path), safe_name, "Turntable")
-        os.makedirs(turntable_dir, exist_ok=True)
+
+        try:
+            os.makedirs(turntable_dir, exist_ok=True)
+        except (PermissionError, OSError) as e:
+            print(f"ABR Error: Cannot create directory '{turntable_dir}': {e}")
+            return
+
+        try:
+            free_space = shutil.disk_usage(turntable_dir).free
+            if free_space < 50 * 1024 * 1024:
+                print(f"ABR Warning: Low disk space ({free_space // (1024 * 1024)}MB free). Turntable render may fail.")
+        except OSError:
+            pass
+
         filename = f"{safe_name}{s.turntable_suffix}_####"
         scene.render.filepath = os.path.join(turntable_dir, filename)
         bpy.ops.render.render(animation=True)
@@ -940,7 +1059,8 @@ class ABR_OT_RenderAll(bpy.types.Operator):
         wm["abr_is_rendering"] = False
         wm["abr_cancel_requested"] = False
 
-        context.area.tag_redraw()
+        if context.area:
+            context.area.tag_redraw()
         report_msg = "Render cancelled." if cancelled else "Batch render finished."
         self.report({'INFO'}, report_msg)
 
@@ -1009,6 +1129,8 @@ class ABR_OT_RenderAll(bpy.types.Operator):
         context.scene.frame_set(self.original_frame)
 
     def draw_progress(self, context):
+        if not context.window_manager.get("abr_is_rendering", False):
+            return
         progress = self.total_job_count - len(self.render_jobs)
         if self.total_job_count > 0:
             text = f"Rendering Job: {progress + 1}/{self.total_job_count} | Press ESC to Cancel"

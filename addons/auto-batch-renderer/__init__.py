@@ -1,7 +1,7 @@
 bl_info = {
     "name": "ZDC - Auto Batch Renderer",
     "author": "Ziti Design & Creative",
-    "version": (5, 3, 0),
+    "version": (5, 4, 0),
     "blender": (5, 0, 0),
     "location": "View3D > Sidebar > ZDC",
     "description": "Automated batch rendering system for product visualization",
@@ -27,6 +27,7 @@ from .operators import (
     ABR_OT_AddHoldPoint,
     ABR_OT_RemoveHoldPoint,
     ABR_OT_InitializeScene,
+    ABR_OT_PreviewFraming,
     ABR_OT_CancelRender,
     ABR_OT_RenderAll,
 )
@@ -51,6 +52,7 @@ classes = (
     ABR_OT_AddHoldPoint,
     ABR_OT_RemoveHoldPoint,
     ABR_OT_InitializeScene,
+    ABR_OT_PreviewFraming,
     ABR_OT_CancelRender,
     ABR_OT_RenderAll,
     ABR_OT_ToggleExcludeFraming,

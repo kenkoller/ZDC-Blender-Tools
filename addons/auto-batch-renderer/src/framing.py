@@ -1,15 +1,18 @@
 # Auto Batch Renderer — Framing module
 # Camera framing and bounding box calculation functions
 
+from __future__ import annotations
+
 import bpy
 from mathutils import Vector
 from math import tan, atan
+from typing import Optional
 from bpy_extras.object_utils import world_to_camera_view
 
 from ..properties import ORTHOGRAPHIC_VIEWS
 
 
-def should_exclude_object_from_framing(obj, settings):
+def should_exclude_object_from_framing(obj: bpy.types.Object, settings) -> bool:
     """
     Determines if an object should be excluded from camera framing calculations.
 
@@ -42,7 +45,12 @@ def should_exclude_object_from_framing(obj, settings):
     return False
 
 
-def get_all_world_vertices(collection, depsgraph, context, settings=None):
+def get_all_world_vertices(
+    collection: bpy.types.Collection,
+    depsgraph: bpy.types.Depsgraph,
+    context: bpy.types.Context,
+    settings=None,
+) -> list[Vector]:
     """
     Gets all world-space vertices from all VISIBLE MESH objects within a given collection,
     excluding objects designated as light modifiers or other non-product geometry.
@@ -97,9 +105,14 @@ def get_all_world_vertices(collection, depsgraph, context, settings=None):
     return all_vertices
 
 
-def get_bounding_box_from_vertices(vertices):
+def get_bounding_box_from_vertices(
+    vertices: list[Vector],
+) -> tuple[Optional[Vector], Optional[Vector], Vector]:
     """
     Calculates the axis-aligned bounding box (AABB) for a given list of world-space vertices.
+
+    Returns:
+        Tuple of (min_coord, max_coord, center). min/max are None if vertices is empty.
     """
     if not vertices:
         return None, None, Vector((0, 0, 0))
@@ -111,9 +124,16 @@ def get_bounding_box_from_vertices(vertices):
     return min_coord, max_coord, center
 
 
-def calculate_camera_distance_perspective(camera, all_world_vertices, margin):
+def calculate_camera_distance_perspective(
+    camera: bpy.types.Object,
+    all_world_vertices: list[Vector],
+    margin: float,
+) -> float:
     """
     Calculates the required distance for a perspective camera to frame all provided vertices.
+
+    Returns:
+        Required camera distance in Blender units.
     """
     if not all_world_vertices:
         return 10.0
@@ -167,9 +187,17 @@ def calculate_camera_distance_perspective(camera, all_world_vertices, margin):
     return final_required_distance
 
 
-def _check_all_vertices_in_frustum(all_world_vertices, camera, context, target_margin):
+def _check_all_vertices_in_frustum(
+    all_world_vertices: list[Vector],
+    camera: bpy.types.Object,
+    context: bpy.types.Context,
+    target_margin: float,
+) -> bool:
     """
     Checks if all world-space vertices are within the render camera's view frustum.
+
+    Returns:
+        True if all vertices are visible within the margin threshold.
     """
     if not all_world_vertices:
         return True
@@ -211,12 +239,24 @@ def _check_all_vertices_in_frustum(all_world_vertices, camera, context, target_m
     return True
 
 
-def frame_object_rig(context, controller, camera, target_collection, margin, depsgraph, force_ortho=False, view_name=""):
-    """
-    Frames the target_collection using the provided camera rig and applies automatic visual centering.
-    This version does NOT handle scaling; scaling is applied after this function runs.
+def frame_object_rig(
+    context: bpy.types.Context,
+    controller: bpy.types.Object,
+    camera: bpy.types.Object,
+    target_collection: bpy.types.Collection,
+    margin: float,
+    depsgraph: bpy.types.Depsgraph,
+    force_ortho: bool = False,
+    view_name: str = "",
+) -> None:
+    """Frame the target_collection using a camera rig with automatic visual centering.
 
-    Now filters out light modifier objects from framing calculations.
+    Positions the controller at the collection's visual center, calculates the
+    required camera distance (perspective) or ortho_scale (orthographic), then
+    applies a camera sensor shift to visually center the object. Includes
+    post-shift frustum validation to prevent clipping.
+
+    Scaling/fine-tune adjustments should be applied by the caller after this returns.
     """
     if not all([controller, camera, target_collection]):
         return
@@ -229,9 +269,23 @@ def frame_object_rig(context, controller, camera, target_collection, margin, dep
         print(f"Warning: No vertices found in collection '{target_collection.name}' (after exclusions). Cannot frame.")
         return
 
-    _, _, bbox_center = get_bounding_box_from_vertices(all_verts)
+    bbox_min, bbox_max, bbox_center = get_bounding_box_from_vertices(all_verts)
 
-    controller.location = bbox_center
+    # Use vertex centroid when it diverges significantly from bbox center.
+    # This gives better visual centering for asymmetric objects like corner cabinets.
+    centroid = Vector((0, 0, 0))
+    for v in all_verts:
+        centroid += v
+    centroid /= len(all_verts)
+
+    bbox_diagonal = (bbox_max - bbox_min).length if bbox_min and bbox_max else 1.0
+    divergence = (bbox_center - centroid).length
+    relative_divergence = divergence / bbox_diagonal if bbox_diagonal > 0 else 0
+    # Blend factor: 0 = pure bbox, 1 = pure centroid (max blend at 30%+ divergence)
+    blend = min(relative_divergence / 0.3, 1.0) * 0.5
+    target_center = bbox_center.lerp(centroid, blend)
+
+    controller.location = target_center
     camera.rotation_euler = controller.rotation_euler
 
     # --- Crucial Reset ---
@@ -250,7 +304,7 @@ def frame_object_rig(context, controller, camera, target_collection, margin, dep
     cam_forward.normalize()
 
     if camera.data.type == 'PERSP':
-        max_iterations = 5
+        max_iterations = 10
         current_calc_margin = margin
 
         for i in range(max_iterations):
@@ -262,8 +316,8 @@ def frame_object_rig(context, controller, camera, target_collection, margin, dep
             if _check_all_vertices_in_frustum(all_verts, camera, context, margin):
                 break
             else:
-                # If framing fails, slightly increase the margin and try again.
-                current_calc_margin += 0.02
+                # Progressive margin increase: larger steps as iterations grow
+                current_calc_margin += 0.01 * (i + 1)
                 current_calc_margin = min(current_calc_margin, 0.5)
                 if i == max_iterations - 1:
                     print(f"Warning: Max framing iterations reached for view '{view_name}'. Framing may be imperfect.")
@@ -320,3 +374,29 @@ def frame_object_rig(context, controller, camera, target_collection, margin, dep
     camera.data.shift_y = -center_offset_y
 
     context.view_layer.update()
+
+    # --- POST-SHIFT FRUSTUM RE-VALIDATION ---
+    # After shifting, verify all vertices are still in the camera frustum.
+    # The centering shift can push edge vertices outside the frame, causing clipping.
+    if camera.data.type == 'PERSP':
+        if not _check_all_vertices_in_frustum(all_verts, camera, context, margin):
+            # Reduce shift magnitude and increase distance to compensate
+            for attempt in range(3):
+                camera.data.shift_x *= 0.5
+                camera.data.shift_y *= 0.5
+                # Pull camera back slightly to recapture clipped edges
+                cam_forward_vec = camera.matrix_world.to_quaternion() @ Vector((0, 0, -1))
+                cam_forward_vec.normalize()
+                current_dist = (camera.location - controller.location).length
+                camera.location = controller.location - cam_forward_vec * (current_dist * 1.05)
+                context.view_layer.update()
+                if _check_all_vertices_in_frustum(all_verts, camera, context, margin):
+                    break
+    else:
+        # For orthographic, increase ortho_scale if vertices are outside frame
+        for v in all_verts:
+            cam_coords = world_to_camera_view(context.scene, camera, v)
+            if cam_coords.x < 0 or cam_coords.x > 1 or cam_coords.y < 0 or cam_coords.y > 1:
+                camera.data.ortho_scale *= 1.1
+                context.view_layer.update()
+                break

@@ -1,10 +1,10 @@
 bl_info = {
     "name": "ZDC - Universal PBR Shader",
     "author": "Ziti Design & Creative",
-    "version": (1, 0, 0),
+    "version": (2, 0, 0),
     "blender": (5, 0, 0),
     "location": "Properties > Material > ZDC",
-    "description": "Full PBR shader with 10 texture maps and optional sparkle system",
+    "description": "Comprehensive PBR shader with texture maps and metallic flake sparkle system",
     "category": "ZDC Tools",
 }
 

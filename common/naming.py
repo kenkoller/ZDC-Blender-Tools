@@ -17,7 +17,6 @@ ADDON_PREFIXES = {
     "auto-batch-renderer": "BatchRender",
     "cabinet-generator": "CabinetGen",
     "kitchen-generator": "KitchenGen",
-    "metallic-flake-shader": "MetallicFlake",
     "universal-pbr-shader": "UniversalPBR",
 }
 

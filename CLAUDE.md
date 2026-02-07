@@ -19,9 +19,10 @@ ZDC-Blender-Tools/
 ├── .gitignore
 ├── addons/                        ← All installable Blender add-ons
 │   ├── auto-batch-renderer/       ← Automated batch rendering pipeline
-│   ├── metallic-flake-shader/     ← Procedural metallic flake + universal PBR shaders
 │   ├── cabinet-generator/         ← Parametric cabinet generation system
+│   ├── home-builder/              ← Room/house construction (Andrew Peel, GPLv3)
 │   ├── kitchen-generator/         ← Kitchen scene/layout generation
+│   ├── universal-pbr-shader/      ← PBR shader with texture maps and metallic flake sparkle
 │   └── [future-addons]/           ← New add-ons get created here
 ├── common/                        ← Shared utilities (extract when patterns emerge)
 │   ├── __init__.py
@@ -44,7 +45,7 @@ All ZDC operators, panels, and property groups follow this prefix convention:
 
 **Operators:** `ZDC_OT_{AddonName}_{action}` (e.g., `ZDC_OT_BatchRender_execute`). The `bl_idname` for operators uses dots: `zdc.batchrender_execute`
 
-**Panels:** `ZDC_PT_{AddonName}_{section}` (e.g., `ZDC_PT_MetallicFlake_settings`)
+**Panels:** `ZDC_PT_{AddonName}_{section}` (e.g., `ZDC_PT_UniversalPBR_settings`)
 
 **Property Groups:** `ZDC_PG_{AddonName}_{name}` (e.g., `ZDC_PG_CabinetGen_dimensions`)
 

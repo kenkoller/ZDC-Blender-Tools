@@ -8,8 +8,7 @@ Blender 5.0+ add-ons for professional 3D product visualization, developed by **Z
 |--------|-------------|--------|
 | [auto-batch-renderer](addons/auto-batch-renderer/) | Automated batch rendering pipeline for high-volume product shots | Production |
 | [cabinet-generator](addons/cabinet-generator/) | Parametric cabinet generation via Geometry Nodes | Production |
-| [metallic-flake-shader](addons/metallic-flake-shader/) | Procedural metallic paint flake material system | Production |
-| [universal-pbr-shader](addons/universal-pbr-shader/) | Full PBR shader with 10 texture maps and sparkle system | Production |
+| [universal-pbr-shader](addons/universal-pbr-shader/) | Comprehensive PBR shader with texture maps and metallic flake sparkle system | Production |
 | [kitchen-generator](addons/kitchen-generator/) | Kitchen scene/layout generation | Stub |
 | [home-builder](addons/home-builder/) | Room/house construction system (Andrew Peel, GPLv3) | Integrated |
 

@@ -2,7 +2,7 @@
 
 This module provides common utilities for creating and managing Blender
 node groups programmatically. Extracted patterns shared between
-cabinet-generator and metallic-flake-shader.
+cabinet-generator and universal-pbr-shader.
 
 Note: cabinet-generator has extensive node helpers in its own
 src/nodes/utils.py — this module is for cross-addon utilities.

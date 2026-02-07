@@ -8,4 +8,16 @@ bl_info = {
     "category": "ZDC Tools",
 }
 
-from .metallic_flake_shader import *
+from . import metallic_flake_shader
+
+
+def register():
+    metallic_flake_shader.register()
+
+
+def unregister():
+    metallic_flake_shader.unregister()
+
+
+if __name__ == "__main__":
+    register()

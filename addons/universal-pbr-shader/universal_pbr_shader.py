@@ -27,15 +27,7 @@ USAGE:
 4. Adjust settings in the expandable panels below
 """
 
-bl_info = {
-    "name": "Universal PBR Shader v1.0.0",
-    "author": "Claude (Anthropic) for Ziti Design & Creative",
-    "version": (1, 0, 0),
-    "blender": (4, 0, 0),
-    "location": "Properties > Material > Universal PBR Shader",
-    "description": "Full PBR shader with 10 texture maps and optional sparkle system",
-    "category": "Material",
-}
+# bl_info is defined in __init__.py (the authoritative source for addon metadata)
 
 import bpy
 import math

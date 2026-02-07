@@ -62,7 +62,7 @@ def get_all_world_vertices(
         collection: The Blender collection to gather vertices from
         depsgraph: The evaluated dependency graph
         context: The Blender context
-        settings: ABR_Settings property group (optional, for exclusion filtering)
+        settings: ZDC_PG_BatchRender_settings property group (optional, for exclusion filtering)
     """
     if not collection:
         return []

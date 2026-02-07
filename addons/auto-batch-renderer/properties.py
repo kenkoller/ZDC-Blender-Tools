@@ -46,7 +46,7 @@ def _deferred_update_markers():
     """Timer callback to safely update markers outside of property update context."""
     try:
         if hasattr(bpy.context, 'scene') and bpy.context.scene:
-            bpy.ops.abr.update_markers()
+            bpy.ops.zdc.batchrender_update_markers()
     except Exception as e:
         print(f"ABR: Could not update markers: {e}")
     return None  # Return None to run only once
@@ -82,7 +82,7 @@ def update_main_view_rotation(self, context):
 
 
 # --- SCRUB UTILITY FUNCTIONS ---
-# These must be defined BEFORE ABR_Settings which references them via lambda update callbacks
+# These must be defined BEFORE ZDC_PG_BatchRender_settings which references them via lambda update callbacks
 
 def _apply_scrub_preset(self, context):
     """Apply preset configuration when preset enum changes."""
@@ -146,7 +146,7 @@ def _update_segment_count(self, context):
 
 # --- PROPERTY GROUPS ---
 
-class ABR_ViewSettings(bpy.types.PropertyGroup):
+class ZDC_PG_BatchRender_view_settings(bpy.types.PropertyGroup):
     """Property group for individual view settings."""
     view_name: bpy.props.StringProperty(name="View Name", default="", update=update_marker_name)
     enabled: bpy.props.BoolProperty(name="Enable", default=True, update=update_marker_name)
@@ -173,7 +173,7 @@ class ABR_ViewSettings(bpy.types.PropertyGroup):
     show_in_ui: bpy.props.BoolProperty(name="Expand View", default=True)
 
 
-class ABR_TurntableSegment(bpy.types.PropertyGroup):
+class ZDC_PG_BatchRender_turntable_segment(bpy.types.PropertyGroup):
     """A single speed segment for multi-segment turntable ramp."""
     speed: bpy.props.FloatProperty(
         name="Speed",
@@ -185,7 +185,7 @@ class ABR_TurntableSegment(bpy.types.PropertyGroup):
     )
 
 
-class ABR_TurntableHoldPoint(bpy.types.PropertyGroup):
+class ZDC_PG_BatchRender_turntable_hold_point(bpy.types.PropertyGroup):
     """A pause/hold point in the turntable animation."""
     angle: bpy.props.FloatProperty(
         name="Angle",
@@ -203,7 +203,7 @@ class ABR_TurntableHoldPoint(bpy.types.PropertyGroup):
     )
 
 
-class ABR_Settings(bpy.types.PropertyGroup):
+class ZDC_PG_BatchRender_settings(bpy.types.PropertyGroup):
     """Main property group for the add-on."""
     target_collection: bpy.props.PointerProperty(
         name="Product Collection",
@@ -238,7 +238,7 @@ class ABR_Settings(bpy.types.PropertyGroup):
         name="Margin", min=-0.5, max=0.95, default=0.1, subtype='PERCENTAGE',
         description="Percentage of frame space around the object. Can be negative to zoom in."
     )
-    views: bpy.props.CollectionProperty(type=ABR_ViewSettings)
+    views: bpy.props.CollectionProperty(type=ZDC_PG_BatchRender_view_settings)
 
     main_view_angle: bpy.props.FloatVectorProperty(
         name="Main View Angle",
@@ -403,7 +403,7 @@ class ABR_Settings(bpy.types.PropertyGroup):
         default=4, min=2, max=12,
         update=lambda self, ctx: _update_segment_count(self, ctx)
     )
-    scrub_segments: bpy.props.CollectionProperty(type=ABR_TurntableSegment)
+    scrub_segments: bpy.props.CollectionProperty(type=ZDC_PG_BatchRender_turntable_segment)
     scrub_active_segment: bpy.props.IntProperty(default=0)
 
     # Random variation mode
@@ -429,7 +429,7 @@ class ABR_Settings(bpy.types.PropertyGroup):
     )
 
     # Hold points mode
-    scrub_hold_points: bpy.props.CollectionProperty(type=ABR_TurntableHoldPoint)
+    scrub_hold_points: bpy.props.CollectionProperty(type=ZDC_PG_BatchRender_turntable_hold_point)
     scrub_active_hold_point: bpy.props.IntProperty(default=0)
 
     def get_total_turntable_frames(self):

@@ -1,12 +1,13 @@
 # Auto Batch Renderer — Panels module
-# UI panel classes
+# UI panel classes for the Render Properties sidebar
 
 import bpy
 
 
-class ABR_PT_MainPanel(bpy.types.Panel):
+class ZDC_PT_BatchRender_main(bpy.types.Panel):
+    """Main panel for the Auto Batch Renderer, shown in Render Properties."""
     bl_label = "Auto Batch Renderer"
-    bl_idname = "RENDER_PT_auto_batch_renderer"
+    bl_idname = "ZDC_PT_BatchRender_main"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "render"
@@ -16,7 +17,7 @@ class ABR_PT_MainPanel(bpy.types.Panel):
         settings = context.scene.abr_settings
 
         # Import operator classes needed for bl_idname references
-        from .operators import ABR_OT_InitializeScene, ABR_OT_UpdateMarkers, ABR_OT_ClearMarkers, ABR_OT_CancelRender, ABR_OT_RenderAll
+        from .operators import ZDC_OT_BatchRender_initialize_scene, ZDC_OT_BatchRender_update_markers, ZDC_OT_BatchRender_clear_markers, ZDC_OT_BatchRender_cancel_render, ZDC_OT_BatchRender_render_all
 
         def draw_fine_tune_panel(layout, view):
             box = layout.box()
@@ -67,7 +68,7 @@ class ABR_PT_MainPanel(bpy.types.Panel):
             sub_row.prop(view, "enable_fine_tune", text="", icon='TOOL_SETTINGS')
 
             if view.view_category != 'STUDIO_STANDARD':
-                op = sub_row.operator("abr.remove_view", text="", icon='REMOVE')
+                op = sub_row.operator("zdc.batchrender_remove_view", text="", icon='REMOVE')
                 op.index = index
 
             if view.enable_fine_tune:
@@ -81,15 +82,15 @@ class ABR_PT_MainPanel(bpy.types.Panel):
             # Initialize Scene button
             row = box.row()
             row.scale_y = 1.2
-            row.operator(ABR_OT_InitializeScene.bl_idname, text="Initialize Scene", icon='ADD')
+            row.operator(ZDC_OT_BatchRender_initialize_scene.bl_idname, text="Initialize Scene", icon='ADD')
             box.separator()
             row = box.row()
             row.prop(settings, "target_collection")
             row = box.row()
             row.prop(settings, "preview_collection")
             row = box.row(align=True)
-            row.operator(ABR_OT_UpdateMarkers.bl_idname, text="Update Markers", icon='FILE_REFRESH')
-            row.operator(ABR_OT_ClearMarkers.bl_idname, text="Clear Markers", icon='X')
+            row.operator(ZDC_OT_BatchRender_update_markers.bl_idname, text="Update Markers", icon='FILE_REFRESH')
+            row.operator(ZDC_OT_BatchRender_clear_markers.bl_idname, text="Clear Markers", icon='X')
 
         box = layout.box()
         row = box.row()
@@ -110,6 +111,9 @@ class ABR_PT_MainPanel(bpy.types.Panel):
             box.prop(settings, "margin")
             box.prop(settings, "use_orthographic")
             box.prop(settings, "disable_live_updates")
+            box.separator()
+            row = box.row()
+            row.operator("zdc.batchrender_preview_framing", text="Preview Framing", icon='CAMERA_DATA')
 
             # --- LIGHT MODIFIERS SUB-PANEL ---
             box.separator()
@@ -202,10 +206,10 @@ class ABR_PT_MainPanel(bpy.types.Panel):
                         angle_end = (settings.turntable_rotation_amount / max(num_segs, 1)) * (i + 1)
                         seg_row.label(text=f"{angle_start:.0f}\u00b0-{angle_end:.0f}\u00b0")
                         seg_row.prop(seg, "speed", text="")
-                        op = seg_row.operator("abr.remove_segment", text="", icon='X')
+                        op = seg_row.operator("zdc.batchrender_remove_segment", text="", icon='X')
                         op.index = i
                     row = scrub_box.row()
-                    row.operator("abr.add_segment", text="Add Segment", icon='ADD')
+                    row.operator("zdc.batchrender_add_segment", text="Add Segment", icon='ADD')
 
                 elif settings.scrub_mode == 'RANDOM':
                     scrub_box.prop(settings, "scrub_random_seed")
@@ -218,16 +222,17 @@ class ABR_PT_MainPanel(bpy.types.Panel):
                         hp_row = scrub_box.row(align=True)
                         hp_row.prop(hp, "angle", text="Angle")
                         hp_row.prop(hp, "hold_duration", text="Hold")
-                        op = hp_row.operator("abr.remove_hold_point", text="", icon='X')
+                        op = hp_row.operator("zdc.batchrender_remove_hold_point", text="", icon='X')
                         op.index = i
                     row = scrub_box.row()
-                    row.operator("abr.add_hold_point", text="Add Hold Point", icon='ADD')
+                    row.operator("zdc.batchrender_add_hold_point", text="Add Hold Point", icon='ADD')
 
         if any(v.view_category == 'STUDIO_STANDARD' for v in settings.views):
             box = layout.box()
             row = box.row()
             row.prop(settings, "show_studio_standard", icon="TRIA_DOWN" if settings.show_studio_standard else "TRIA_RIGHT", icon_only=True, emboss=False)
             row.label(text="Standard Studio Renders")
+            row.operator("zdc.batchrender_reset_views", text="", icon='FILE_REFRESH')
             if settings.show_studio_standard:
                 for i, view in enumerate(settings.views):
                     if view.view_category == 'STUDIO_STANDARD':
@@ -238,7 +243,7 @@ class ABR_PT_MainPanel(bpy.types.Panel):
             row = box.row()
             row.prop(settings, "show_studio_optional", icon="TRIA_DOWN" if settings.show_studio_optional else "TRIA_RIGHT", icon_only=True, emboss=False)
             row.label(text="Optional Studio Renders")
-            op = row.operator("abr.add_view", text="", icon='ADD')
+            op = row.operator("zdc.batchrender_add_view", text="", icon='ADD')
             op.category = 'STUDIO_OPTION'
             if settings.show_studio_optional:
                 for i, view in enumerate(settings.views):
@@ -250,7 +255,7 @@ class ABR_PT_MainPanel(bpy.types.Panel):
             row = box.row()
             row.prop(settings, "show_application", icon="TRIA_DOWN" if settings.show_application else "TRIA_RIGHT", icon_only=True, emboss=False)
             row.label(text="Application Renders")
-            op = row.operator("abr.add_view", text="", icon='ADD')
+            op = row.operator("zdc.batchrender_add_view", text="", icon='ADD')
             op.category = 'APPLICATION'
             if settings.show_application:
                 for i, view in enumerate(settings.views):
@@ -280,6 +285,6 @@ class ABR_PT_MainPanel(bpy.types.Panel):
             row = box.row()
             row.scale_y = 1.5
             if context.window_manager.get("abr_is_rendering", False):
-                row.operator(ABR_OT_CancelRender.bl_idname, text="Cancel Batch Render", icon='CANCEL')
+                row.operator(ZDC_OT_BatchRender_cancel_render.bl_idname, text="Cancel Batch Render", icon='CANCEL')
             else:
-                row.operator(ABR_OT_RenderAll.bl_idname, text="Render Enabled Views", icon='RENDER_ANIMATION')
+                row.operator(ZDC_OT_BatchRender_render_all.bl_idname, text="Render Enabled Views", icon='RENDER_ANIMATION')

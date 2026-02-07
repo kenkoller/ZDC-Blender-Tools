@@ -1,7 +1,7 @@
 bl_info = {
     "name": "ZDC - Auto Batch Renderer",
     "author": "Ziti Design & Creative",
-    "version": (5, 3, 0),
+    "version": (5, 5, 0),
     "blender": (5, 0, 0),
     "location": "View3D > Sidebar > ZDC",
     "description": "Automated batch rendering system for product visualization",
@@ -11,49 +11,53 @@ bl_info = {
 import bpy
 
 from .properties import (
-    ABR_TurntableSegment,
-    ABR_TurntableHoldPoint,
-    ABR_ViewSettings,
-    ABR_Settings,
+    ZDC_PG_BatchRender_turntable_segment,
+    ZDC_PG_BatchRender_turntable_hold_point,
+    ZDC_PG_BatchRender_view_settings,
+    ZDC_PG_BatchRender_settings,
 )
 from .operators import (
-    ABR_OT_ToggleExcludeFraming,
-    ABR_OT_UpdateMarkers,
-    ABR_OT_AddView,
-    ABR_OT_RemoveView,
-    ABR_OT_ClearMarkers,
-    ABR_OT_AddSegment,
-    ABR_OT_RemoveSegment,
-    ABR_OT_AddHoldPoint,
-    ABR_OT_RemoveHoldPoint,
-    ABR_OT_InitializeScene,
-    ABR_OT_CancelRender,
-    ABR_OT_RenderAll,
+    ZDC_OT_BatchRender_toggle_exclude_framing,
+    ZDC_OT_BatchRender_update_markers,
+    ZDC_OT_BatchRender_add_view,
+    ZDC_OT_BatchRender_remove_view,
+    ZDC_OT_BatchRender_clear_markers,
+    ZDC_OT_BatchRender_reset_views,
+    ZDC_OT_BatchRender_add_segment,
+    ZDC_OT_BatchRender_remove_segment,
+    ZDC_OT_BatchRender_add_hold_point,
+    ZDC_OT_BatchRender_remove_hold_point,
+    ZDC_OT_BatchRender_initialize_scene,
+    ZDC_OT_BatchRender_preview_framing,
+    ZDC_OT_BatchRender_cancel_render,
+    ZDC_OT_BatchRender_render_all,
 )
-from .panels import ABR_PT_MainPanel
+from .panels import ZDC_PT_BatchRender_main
 from .handlers import (
     timeline_update_handler,
     _deferred_data_check,
 )
 
 classes = (
-    ABR_TurntableSegment,
-    ABR_TurntableHoldPoint,
-    ABR_ViewSettings,
-    ABR_Settings,
-    ABR_PT_MainPanel,
-    ABR_OT_UpdateMarkers,
-    ABR_OT_AddView,
-    ABR_OT_RemoveView,
-    ABR_OT_ClearMarkers,
-    ABR_OT_AddSegment,
-    ABR_OT_RemoveSegment,
-    ABR_OT_AddHoldPoint,
-    ABR_OT_RemoveHoldPoint,
-    ABR_OT_InitializeScene,
-    ABR_OT_CancelRender,
-    ABR_OT_RenderAll,
-    ABR_OT_ToggleExcludeFraming,
+    ZDC_PG_BatchRender_turntable_segment,
+    ZDC_PG_BatchRender_turntable_hold_point,
+    ZDC_PG_BatchRender_view_settings,
+    ZDC_PG_BatchRender_settings,
+    ZDC_PT_BatchRender_main,
+    ZDC_OT_BatchRender_update_markers,
+    ZDC_OT_BatchRender_add_view,
+    ZDC_OT_BatchRender_remove_view,
+    ZDC_OT_BatchRender_clear_markers,
+    ZDC_OT_BatchRender_reset_views,
+    ZDC_OT_BatchRender_add_segment,
+    ZDC_OT_BatchRender_remove_segment,
+    ZDC_OT_BatchRender_add_hold_point,
+    ZDC_OT_BatchRender_remove_hold_point,
+    ZDC_OT_BatchRender_initialize_scene,
+    ZDC_OT_BatchRender_preview_framing,
+    ZDC_OT_BatchRender_cancel_render,
+    ZDC_OT_BatchRender_render_all,
+    ZDC_OT_BatchRender_toggle_exclude_framing,
 )
 
 
@@ -61,7 +65,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.Scene.abr_settings = bpy.props.PointerProperty(type=ABR_Settings)
+    bpy.types.Scene.abr_settings = bpy.props.PointerProperty(type=ZDC_PG_BatchRender_settings)
 
     if not bpy.app.background:
         # Add the handler only if it's not already there

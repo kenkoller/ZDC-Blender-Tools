@@ -1,10 +1,11 @@
 # Auto Batch Renderer — Operators module
-# All ABR_OT_* operator classes
+# All ZDC_OT_BatchRender_* operator classes
 
 import bpy
 from mathutils import Vector
 from math import radians
 import os
+import shutil
 import random
 import blf  # For drawing progress in the viewport
 
@@ -12,9 +13,9 @@ from .properties import GLOBAL_ANGLES, ORTHOGRAPHIC_VIEWS
 from .src.framing import frame_object_rig
 
 
-class ABR_OT_ToggleExcludeFraming(bpy.types.Operator):
+class ZDC_OT_BatchRender_toggle_exclude_framing(bpy.types.Operator):
     """Toggle the abr_exclude_framing custom property on selected objects"""
-    bl_idname = "abr.toggle_exclude_framing"
+    bl_idname = "zdc.batchrender_toggle_exclude_framing"
     bl_label = "Toggle Exclude from Framing"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -42,8 +43,9 @@ class ABR_OT_ToggleExcludeFraming(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ABR_OT_UpdateMarkers(bpy.types.Operator):
-    bl_idname = "abr.update_markers"
+class ZDC_OT_BatchRender_update_markers(bpy.types.Operator):
+    """Synchronize timeline markers with the current set of enabled views."""
+    bl_idname = "zdc.batchrender_update_markers"
     bl_label = "Update Markers"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -66,8 +68,9 @@ class ABR_OT_UpdateMarkers(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ABR_OT_AddView(bpy.types.Operator):
-    bl_idname = "abr.add_view"
+class ZDC_OT_BatchRender_add_view(bpy.types.Operator):
+    """Add a new optional studio or application view to the render list."""
+    bl_idname = "zdc.batchrender_add_view"
     bl_label = "Add View"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -79,29 +82,29 @@ class ABR_OT_AddView(bpy.types.Operator):
 
         if self.category == 'STUDIO_OPTION':
             num_existing = len([v for v in settings.views if v.view_category == 'STUDIO_OPTION'])
-            new_view.view_name = f"Optional {chr(65 + num_existing - 1)}"
-            new_view.suffix = f"_Optional{chr(65 + num_existing - 1)}"
+            new_view.view_name = f"Optional {chr(65 + num_existing)}"
+            new_view.suffix = f"_Optional{chr(65 + num_existing)}"
             new_view.view_category = 'STUDIO_OPTION'
-            new_view.base_angle_choice = 'Default Optional'
             angle_deg = GLOBAL_ANGLES.get("Default Optional")
             if angle_deg:
                 new_view.camera_angle = [radians(a) for a in angle_deg]
 
         elif self.category == 'APPLICATION':
             num_existing = len([v for v in settings.views if v.view_category == 'APPLICATION'])
-            new_view.view_name = f"Application {chr(65 + num_existing - 1)}"
-            new_view.suffix = f"_Application{chr(65 + num_existing - 1)}"
+            new_view.view_name = f"Application {chr(65 + num_existing)}"
+            new_view.suffix = f"_Application{chr(65 + num_existing)}"
             new_view.view_category = 'APPLICATION'
             angle_deg = GLOBAL_ANGLES.get("Default Application")
             if angle_deg:
                 new_view.camera_angle = [radians(a) for a in angle_deg]
 
-        bpy.ops.abr.update_markers()
+        bpy.ops.zdc.batchrender_update_markers()
         return {'FINISHED'}
 
 
-class ABR_OT_RemoveView(bpy.types.Operator):
-    bl_idname = "abr.remove_view"
+class ZDC_OT_BatchRender_remove_view(bpy.types.Operator):
+    """Remove an optional view from the render list by index."""
+    bl_idname = "zdc.batchrender_remove_view"
     bl_label = "Remove View"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -110,12 +113,13 @@ class ABR_OT_RemoveView(bpy.types.Operator):
     def execute(self, context):
         settings = context.scene.abr_settings
         settings.views.remove(self.index)
-        bpy.ops.abr.update_markers()
+        bpy.ops.zdc.batchrender_update_markers()
         return {'FINISHED'}
 
 
-class ABR_OT_ClearMarkers(bpy.types.Operator):
-    bl_idname = "abr.clear_markers"
+class ZDC_OT_BatchRender_clear_markers(bpy.types.Operator):
+    """Remove all timeline markers from the scene."""
+    bl_idname = "zdc.batchrender_clear_markers"
     bl_label = "Clear Markers"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -127,9 +131,24 @@ class ABR_OT_ClearMarkers(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ABR_OT_AddSegment(bpy.types.Operator):
+class ZDC_OT_BatchRender_reset_views(bpy.types.Operator):
+    """Reset to the 8 standard studio views. Removes all optional/application views."""
+    bl_idname = "zdc.batchrender_reset_views"
+    bl_label = "Reset Standard Views"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        settings = context.scene.abr_settings
+        settings.views.clear()
+        from .handlers import data_check_and_populate
+        data_check_and_populate(context)
+        self.report({'INFO'}, "Standard views restored.")
+        return {'FINISHED'}
+
+
+class ZDC_OT_BatchRender_add_segment(bpy.types.Operator):
     """Add a speed segment to the turntable animation"""
-    bl_idname = "abr.add_segment"
+    bl_idname = "zdc.batchrender_add_segment"
     bl_label = "Add Segment"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -142,9 +161,9 @@ class ABR_OT_AddSegment(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ABR_OT_RemoveSegment(bpy.types.Operator):
+class ZDC_OT_BatchRender_remove_segment(bpy.types.Operator):
     """Remove a speed segment from the turntable animation"""
-    bl_idname = "abr.remove_segment"
+    bl_idname = "zdc.batchrender_remove_segment"
     bl_label = "Remove Segment"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -160,9 +179,9 @@ class ABR_OT_RemoveSegment(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ABR_OT_AddHoldPoint(bpy.types.Operator):
+class ZDC_OT_BatchRender_add_hold_point(bpy.types.Operator):
     """Add a hold point to the turntable animation"""
-    bl_idname = "abr.add_hold_point"
+    bl_idname = "zdc.batchrender_add_hold_point"
     bl_label = "Add Hold Point"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -176,9 +195,9 @@ class ABR_OT_AddHoldPoint(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ABR_OT_RemoveHoldPoint(bpy.types.Operator):
+class ZDC_OT_BatchRender_remove_hold_point(bpy.types.Operator):
     """Remove a hold point from the turntable animation"""
-    bl_idname = "abr.remove_hold_point"
+    bl_idname = "zdc.batchrender_remove_hold_point"
     bl_label = "Remove Hold Point"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -192,9 +211,9 @@ class ABR_OT_RemoveHoldPoint(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ABR_OT_InitializeScene(bpy.types.Operator):
+class ZDC_OT_BatchRender_initialize_scene(bpy.types.Operator):
     """Initialize the scene with all required ABR objects and collections"""
-    bl_idname = "abr.initialize_scene"
+    bl_idname = "zdc.batchrender_initialize_scene"
     bl_label = "Initialize Scene"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -232,10 +251,12 @@ class ABR_OT_InitializeScene(bpy.types.Operator):
         layout.separator()
 
         col = layout.column(align=True)
+        if self.create_controller or self.create_studio_camera:
+            col.label(text="• ABR_Rig (Collection)", icon='OUTLINER_COLLECTION')
         if self.create_controller:
-            col.label(text="• ABR_Camera_Controller (Empty)", icon='EMPTY_DATA')
+            col.label(text="  • ABR_Camera_Controller (Empty)", icon='EMPTY_DATA')
         if self.create_studio_camera:
-            col.label(text="• ABR_Studio_Camera (Camera)", icon='CAMERA_DATA')
+            col.label(text="  • ABR_Studio_Camera (Camera)", icon='CAMERA_DATA')
         if self.create_target_collection:
             col.label(text="• ABR_Products (Collection)", icon='OUTLINER_COLLECTION')
         if self.create_preview_collection:
@@ -246,17 +267,32 @@ class ABR_OT_InitializeScene(bpy.types.Operator):
         layout.separator()
         layout.label(text="Existing assignments will not be changed.")
 
+    def _get_or_create_rig_collection(self, scene):
+        """Get or create the ABR_Rig collection for camera rig objects."""
+        rig_coll = bpy.data.collections.get("ABR_Rig")
+        if not rig_coll:
+            rig_coll = bpy.data.collections.new("ABR_Rig")
+            scene.collection.children.link(rig_coll)
+        elif rig_coll.name not in scene.collection.children:
+            scene.collection.children.link(rig_coll)
+        return rig_coll
+
     def execute(self, context):
         settings = context.scene.abr_settings
         scene = context.scene
         created_items = []
+
+        # Get or create the rig collection for controller + camera
+        rig_coll = None
+        if self.create_controller or self.create_studio_camera:
+            rig_coll = self._get_or_create_rig_collection(scene)
 
         # Create Camera Controller (Empty)
         if self.create_controller:
             controller = bpy.data.objects.new("ABR_Camera_Controller", None)
             controller.empty_display_type = 'PLAIN_AXES'
             controller.empty_display_size = 0.5
-            scene.collection.objects.link(controller)
+            rig_coll.objects.link(controller)
             settings.camera_controller = controller
             created_items.append("Camera Controller")
 
@@ -264,7 +300,7 @@ class ABR_OT_InitializeScene(bpy.types.Operator):
         if self.create_studio_camera:
             cam_data = bpy.data.cameras.new("ABR_Studio_Camera")
             studio_camera = bpy.data.objects.new("ABR_Studio_Camera", cam_data)
-            scene.collection.objects.link(studio_camera)
+            rig_coll.objects.link(studio_camera)
             settings.studio_camera = studio_camera
             # Set as active camera if none exists
             if scene.camera is None:
@@ -299,8 +335,90 @@ class ABR_OT_InitializeScene(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ABR_OT_CancelRender(bpy.types.Operator):
-    bl_idname = "abr.cancel_render"
+class ZDC_OT_BatchRender_preview_framing(bpy.types.Operator):
+    """Preview camera framing for the selected view without rendering.
+    Uses the preview collection if set, otherwise the first child of the target collection."""
+    bl_idname = "zdc.batchrender_preview_framing"
+    bl_label = "Preview Camera Framing"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        s = context.scene.abr_settings
+        has_camera = s.studio_camera is not None and s.camera_controller is not None
+        has_collection = s.preview_collection is not None or s.target_collection is not None
+        return has_camera and has_collection
+
+    def execute(self, context):
+        s = context.scene.abr_settings
+        scene = context.scene
+
+        cam = s.studio_camera
+        controller = s.camera_controller
+
+        # Determine which collection to frame
+        # Check preview_collection has actual objects; empty collection is not useful
+        collection = s.preview_collection if s.preview_collection and len(s.preview_collection.all_objects) > 0 else None
+        if not collection:
+            # Use first child of target collection, or target itself
+            if s.target_collection and s.target_collection.children:
+                children = [c for c in s.target_collection.children if c.name != "Props"]
+                collection = children[0] if children else s.target_collection
+            elif s.target_collection:
+                collection = s.target_collection
+
+        if not collection:
+            self.report({'ERROR'}, "No collection available for framing preview.")
+            return {'CANCELLED'}
+
+        # Determine which view to preview based on the current frame position
+        enabled_views = [v for v in s.views if v.enabled]
+        if not enabled_views:
+            self.report({'WARNING'}, "No enabled views to preview.")
+            return {'CANCELLED'}
+
+        # Map frame position to view index (frame 1 = first view, etc.)
+        view_index = max(0, min(scene.frame_current - 1, len(enabled_views) - 1))
+        view = enabled_views[view_index]
+
+        # Replicate the exact render_still framing logic
+        scene.frame_set(view.animation_frame)
+        controller.rotation_euler = view.camera_angle
+        context.view_layer.update()
+        depsgraph = context.evaluated_depsgraph_get()
+
+        frame_object_rig(
+            context, controller, cam, collection,
+            s.margin, depsgraph, s.use_orthographic, view.view_name
+        )
+        context.view_layer.update()
+
+        # Apply fine-tuning if enabled
+        if view.enable_fine_tune:
+            scale = view.fine_tune_scale
+            pos_offset = Vector(view.fine_tune_position)
+
+            if cam.data.type == 'ORTHO':
+                cam.data.ortho_scale /= scale
+            else:
+                cam_direction = (cam.location - controller.location).normalized()
+                current_distance = (cam.location - controller.location).length
+                new_distance = current_distance / scale
+                cam.location = controller.location + cam_direction * new_distance
+
+            world_offset = cam.matrix_world.to_quaternion() @ pos_offset
+            cam.location += world_offset
+
+        scene.camera = cam
+        context.view_layer.update()
+
+        self.report({'INFO'}, f"Camera framed for: {view.view_name} ({collection.name})")
+        return {'FINISHED'}
+
+
+class ZDC_OT_BatchRender_cancel_render(bpy.types.Operator):
+    """Request cancellation of the currently running batch render."""
+    bl_idname = "zdc.batchrender_cancel_render"
     bl_label = "Cancel Batch Render"
     bl_options = {'REGISTER'}
 
@@ -310,8 +428,14 @@ class ABR_OT_CancelRender(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class ABR_OT_RenderAll(bpy.types.Operator):
-    bl_idname = "abr.render_all"
+class ZDC_OT_BatchRender_render_all(bpy.types.Operator):
+    """Render all enabled views for every child collection in the target collection.
+
+    Operates as a modal operator with a timer. For each collection, renders
+    still images for each enabled view, then optionally a turntable animation.
+    Restores all original scene settings on completion or cancellation.
+    """
+    bl_idname = "zdc.batchrender_render_all"
     bl_label = "Render Enabled Views"
     bl_options = {'REGISTER'}
 
@@ -368,7 +492,7 @@ class ABR_OT_RenderAll(bpy.types.Operator):
         wm = context.window_manager
         self._timer = wm.event_timer_add(0.1, window=context.window)
         wm.modal_handler_add(self)
-        ABR_OT_RenderAll._draw_handle = bpy.types.SpaceView3D.draw_handler_add(self.draw_progress, (context,), 'WINDOW', 'POST_PIXEL')
+        ZDC_OT_BatchRender_render_all._draw_handle = bpy.types.SpaceView3D.draw_handler_add(self.draw_progress, (context,), 'WINDOW', 'POST_PIXEL')
 
         self.report({'INFO'}, f"Starting batch render of {self.total_job_count} jobs...")
         return {'RUNNING_MODAL'}
@@ -388,7 +512,8 @@ class ABR_OT_RenderAll(bpy.types.Operator):
 
             job = self.render_jobs.pop(0)
             self.process_job(context, job)
-            context.area.tag_redraw()
+            if context.area:
+                context.area.tag_redraw()
 
         return {'PASS_THROUGH'}
 
@@ -482,9 +607,22 @@ class ABR_OT_RenderAll(bpy.types.Operator):
         safe_name = bpy.path.clean_name(collection.name)
         filename = f"{safe_name}{view.suffix}"  # Extension will be added by Blender
         output_dir = os.path.join(bpy.path.abspath(s.output_path), safe_name)
-        os.makedirs(output_dir, exist_ok=True)
-        scene.render.filepath = os.path.join(output_dir, filename)
 
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+        except (PermissionError, OSError) as e:
+            print(f"ABR Error: Cannot create directory '{output_dir}': {e}")
+            return
+
+        # Check available disk space (warn below 50MB)
+        try:
+            free_space = shutil.disk_usage(output_dir).free
+            if free_space < 50 * 1024 * 1024:
+                print(f"ABR Warning: Low disk space ({free_space // (1024 * 1024)}MB free). Render may fail.")
+        except OSError:
+            pass  # disk_usage may not be available on all platforms
+
+        scene.render.filepath = os.path.join(output_dir, filename)
         bpy.ops.render.render(write_still=True)
 
     # --- KEYFRAME GENERATION HELPERS ---
@@ -550,7 +688,7 @@ class ABR_OT_RenderAll(bpy.types.Operator):
             controller.keyframe_insert(data_path="rotation_euler", frame=int(current_frame), index=2)
 
         # Set all to linear (constant speed within each segment)
-        ABR_OT_RenderAll._set_fcurve_interpolation(controller, 'LINEAR')
+        ZDC_OT_BatchRender_render_all._set_fcurve_interpolation(controller, 'LINEAR')
         return int(current_frame)
 
     @staticmethod
@@ -601,7 +739,7 @@ class ABR_OT_RenderAll(bpy.types.Operator):
         controller.keyframe_insert(data_path="rotation_euler", frame=int(final_frame), index=2)
 
         # Bezier for organic feel
-        ABR_OT_RenderAll._set_fcurve_interpolation(controller, 'BEZIER', 'AUTO')
+        ZDC_OT_BatchRender_render_all._set_fcurve_interpolation(controller, 'BEZIER', 'AUTO')
         return int(final_frame)
 
     @staticmethod
@@ -617,7 +755,7 @@ class ABR_OT_RenderAll(bpy.types.Operator):
             end_frame = start_frame + duration
             controller.rotation_euler.z = start_angle + total_rotation
             controller.keyframe_insert(data_path="rotation_euler", frame=end_frame, index=2)
-            ABR_OT_RenderAll._set_fcurve_interpolation(controller, 'LINEAR')
+            ZDC_OT_BatchRender_render_all._set_fcurve_interpolation(controller, 'LINEAR')
             return end_frame
 
         # Time per degree during motion (holds are added on top of duration)
@@ -664,7 +802,7 @@ class ABR_OT_RenderAll(bpy.types.Operator):
         controller.rotation_euler.z = start_angle + total_rotation
         controller.keyframe_insert(data_path="rotation_euler", frame=int(current_frame), index=2)
 
-        ABR_OT_RenderAll._set_fcurve_interpolation(controller, 'LINEAR')
+        ZDC_OT_BatchRender_render_all._set_fcurve_interpolation(controller, 'LINEAR')
         return int(current_frame)
 
     # --- TURNTABLE RENDER ---
@@ -819,7 +957,20 @@ class ABR_OT_RenderAll(bpy.types.Operator):
 
         safe_name = bpy.path.clean_name(collection.name)
         turntable_dir = os.path.join(bpy.path.abspath(s.output_path), safe_name, "Turntable")
-        os.makedirs(turntable_dir, exist_ok=True)
+
+        try:
+            os.makedirs(turntable_dir, exist_ok=True)
+        except (PermissionError, OSError) as e:
+            print(f"ABR Error: Cannot create directory '{turntable_dir}': {e}")
+            return
+
+        try:
+            free_space = shutil.disk_usage(turntable_dir).free
+            if free_space < 50 * 1024 * 1024:
+                print(f"ABR Warning: Low disk space ({free_space // (1024 * 1024)}MB free). Turntable render may fail.")
+        except OSError:
+            pass
+
         filename = f"{safe_name}{s.turntable_suffix}_####"
         scene.render.filepath = os.path.join(turntable_dir, filename)
         bpy.ops.render.render(animation=True)
@@ -917,9 +1068,9 @@ class ABR_OT_RenderAll(bpy.types.Operator):
         if self._timer:
             wm.event_timer_remove(self._timer)
             self._timer = None
-        if ABR_OT_RenderAll._draw_handle:
-            bpy.types.SpaceView3D.draw_handler_remove(ABR_OT_RenderAll._draw_handle, 'WINDOW')
-            ABR_OT_RenderAll._draw_handle = None
+        if ZDC_OT_BatchRender_render_all._draw_handle:
+            bpy.types.SpaceView3D.draw_handler_remove(ZDC_OT_BatchRender_render_all._draw_handle, 'WINDOW')
+            ZDC_OT_BatchRender_render_all._draw_handle = None
 
         self.restore_settings(context)
 
@@ -940,7 +1091,8 @@ class ABR_OT_RenderAll(bpy.types.Operator):
         wm["abr_is_rendering"] = False
         wm["abr_cancel_requested"] = False
 
-        context.area.tag_redraw()
+        if context.area:
+            context.area.tag_redraw()
         report_msg = "Render cancelled." if cancelled else "Batch render finished."
         self.report({'INFO'}, report_msg)
 
@@ -1009,6 +1161,8 @@ class ABR_OT_RenderAll(bpy.types.Operator):
         context.scene.frame_set(self.original_frame)
 
     def draw_progress(self, context):
+        if not context.window_manager.get("abr_is_rendering", False):
+            return
         progress = self.total_job_count - len(self.render_jobs)
         if self.total_job_count > 0:
             text = f"Rendering Job: {progress + 1}/{self.total_job_count} | Press ESC to Cancel"

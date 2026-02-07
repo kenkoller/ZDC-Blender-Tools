@@ -5,6 +5,7 @@
 # Private / confidential files (NEVER commit these)
 CLAUDE.local.md
 reference/
+**/revashelf_specs.py
 
 # Python bytecode and caches
 __pycache__/
@@ -63,6 +64,9 @@ home-builder-4.5/
 # macOS Finder icon resource files
 Icon?
 Icon
+
+# BlenderMCP addon (third-party, downloaded from GitHub)
+mcp/blender_mcp_addon.py
 
 # Nested .claude directories (keep root only)
 addons/**/.claude/

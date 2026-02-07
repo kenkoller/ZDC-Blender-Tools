@@ -1,11 +1,11 @@
 bl_info = {
-    "name": "Auto Batch Renderer",
-    "author": "Ken Koller",
-    "version": (5, 2, 0),
+    "name": "ZDC - Auto Batch Renderer",
+    "author": "Ziti Design & Creative",
+    "version": (5, 3, 0),
     "blender": (5, 0, 0),
-    "location": "View3D > Sidebar > Batch Render",
-    "description": "Automated batch rendering system",
-    "category": "Render",
+    "location": "View3D > Sidebar > ZDC",
+    "description": "Automated batch rendering system for product visualization",
+    "category": "ZDC Tools",
 }
 
 from .auto_batch_renderer import *

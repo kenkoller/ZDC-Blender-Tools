@@ -1,16 +1,5 @@
-# This is the standard information block required for all Blender add-ons.
-# It tells Blender the name of the add-on, author, version, etc.
-bl_info = {
-    "name": "Auto Batch Renderer",
-    "author": "Gemini & Ken",
-    "version": (5, 3, 0),  # Added Scrub (variable speed turntable) feature
-    "blender": (4, 2, 0),  # Minimum version - works with 5.0+
-    "location": "Properties > Render Properties > Auto Batch Renderer",
-    "description": "Automatically frames and renders multiple views, including turntables, for product collections.",
-    "warning": "",
-    "doc_url": "",
-    "category": "Render",
-}
+# Auto Batch Renderer — core module
+# bl_info is defined in __init__.py (the authoritative source for addon metadata)
 
 # Import necessary Blender Python modules
 import bpy

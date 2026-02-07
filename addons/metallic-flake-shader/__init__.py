@@ -1,11 +1,11 @@
 bl_info = {
-    "name": "Metallic Flake Shader",
-    "author": "Ken Koller",
-    "version": (3, 5, 2),
+    "name": "ZDC - Metallic Flake Shader",
+    "author": "Ziti Design & Creative",
+    "version": (4, 0, 0),
     "blender": (5, 0, 0),
-    "location": "Shader Editor > Add > Metallic Flake",
+    "location": "Properties > Material > ZDC",
     "description": "Procedural metallic paint flake material system",
-    "category": "Material",
+    "category": "ZDC Tools",
 }
 
 from .metallic_flake_shader import *

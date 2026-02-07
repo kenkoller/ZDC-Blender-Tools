@@ -1,11 +1,11 @@
 bl_info = {
-    "name": "Kitchen Generator",
-    "author": "Ken Koller",
+    "name": "ZDC - Kitchen Generator",
+    "author": "Ziti Design & Creative",
     "version": (1, 0, 0),
     "blender": (5, 0, 0),
-    "location": "View3D > Sidebar > Kitchen Generator",
+    "location": "View3D > Sidebar > ZDC",
     "description": "Complete kitchen generation system",
-    "category": "Add Mesh",
+    "category": "ZDC Tools",
 }
 
 import bpy

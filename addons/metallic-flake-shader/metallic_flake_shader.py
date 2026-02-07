@@ -37,15 +37,7 @@ USAGE:
 4. Adjust settings in the expandable panels below
 """
 
-bl_info = {
-    "name": "Metallic Flake Plastic v4.0.0",
-    "author": "Claude (Anthropic) for Ziti Design & Creative",
-    "version": (4, 0, 0),
-    "blender": (4, 0, 0),
-    "location": "Properties > Material > Metallic Flake Plastic",
-    "description": "Three-layer metallic sparkle plastic shader with view-based visibility",
-    "category": "Material",
-}
+# bl_info is defined in __init__.py (the authoritative source for addon metadata)
 
 import bpy
 import math

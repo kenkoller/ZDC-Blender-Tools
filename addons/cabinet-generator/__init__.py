@@ -1,11 +1,11 @@
 bl_info = {
-    "name": "Cabinet Generator",
-    "author": "Ken Koller",
-    "version": (2, 0, 0),
+    "name": "ZDC - Cabinet Generator",
+    "author": "Ziti Design & Creative",
+    "version": (4, 0, 0),
     "blender": (5, 0, 0),
-    "location": "View3D > Sidebar > Cabinet",
+    "location": "View3D > Sidebar > ZDC",
     "description": "Parametric cabinet generation system using Geometry Nodes",
-    "category": "Add Mesh",
+    "category": "ZDC Tools",
 }
 
 import bpy

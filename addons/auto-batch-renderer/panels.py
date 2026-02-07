@@ -232,6 +232,7 @@ class ZDC_PT_BatchRender_main(bpy.types.Panel):
             row = box.row()
             row.prop(settings, "show_studio_standard", icon="TRIA_DOWN" if settings.show_studio_standard else "TRIA_RIGHT", icon_only=True, emboss=False)
             row.label(text="Standard Studio Renders")
+            row.operator("zdc.batchrender_reset_views", text="", icon='FILE_REFRESH')
             if settings.show_studio_standard:
                 for i, view in enumerate(settings.views):
                     if view.view_category == 'STUDIO_STANDARD':

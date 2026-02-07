@@ -82,18 +82,17 @@ class ZDC_OT_BatchRender_add_view(bpy.types.Operator):
 
         if self.category == 'STUDIO_OPTION':
             num_existing = len([v for v in settings.views if v.view_category == 'STUDIO_OPTION'])
-            new_view.view_name = f"Optional {chr(65 + num_existing - 1)}"
-            new_view.suffix = f"_Optional{chr(65 + num_existing - 1)}"
+            new_view.view_name = f"Optional {chr(65 + num_existing)}"
+            new_view.suffix = f"_Optional{chr(65 + num_existing)}"
             new_view.view_category = 'STUDIO_OPTION'
-            new_view.base_angle_choice = 'Default Optional'
             angle_deg = GLOBAL_ANGLES.get("Default Optional")
             if angle_deg:
                 new_view.camera_angle = [radians(a) for a in angle_deg]
 
         elif self.category == 'APPLICATION':
             num_existing = len([v for v in settings.views if v.view_category == 'APPLICATION'])
-            new_view.view_name = f"Application {chr(65 + num_existing - 1)}"
-            new_view.suffix = f"_Application{chr(65 + num_existing - 1)}"
+            new_view.view_name = f"Application {chr(65 + num_existing)}"
+            new_view.suffix = f"_Application{chr(65 + num_existing)}"
             new_view.view_category = 'APPLICATION'
             angle_deg = GLOBAL_ANGLES.get("Default Application")
             if angle_deg:
@@ -129,6 +128,21 @@ class ZDC_OT_BatchRender_clear_markers(bpy.types.Operator):
         for m in reversed(scene.timeline_markers):
             scene.timeline_markers.remove(m)
         self.report({'INFO'}, "Cleared all timeline markers.")
+        return {'FINISHED'}
+
+
+class ZDC_OT_BatchRender_reset_views(bpy.types.Operator):
+    """Reset to the 8 standard studio views. Removes all optional/application views."""
+    bl_idname = "zdc.batchrender_reset_views"
+    bl_label = "Reset Standard Views"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        settings = context.scene.abr_settings
+        settings.views.clear()
+        from .handlers import data_check_and_populate
+        data_check_and_populate(context)
+        self.report({'INFO'}, "Standard views restored.")
         return {'FINISHED'}
 
 
@@ -237,10 +251,12 @@ class ZDC_OT_BatchRender_initialize_scene(bpy.types.Operator):
         layout.separator()
 
         col = layout.column(align=True)
+        if self.create_controller or self.create_studio_camera:
+            col.label(text="• ABR_Rig (Collection)", icon='OUTLINER_COLLECTION')
         if self.create_controller:
-            col.label(text="• ABR_Camera_Controller (Empty)", icon='EMPTY_DATA')
+            col.label(text="  • ABR_Camera_Controller (Empty)", icon='EMPTY_DATA')
         if self.create_studio_camera:
-            col.label(text="• ABR_Studio_Camera (Camera)", icon='CAMERA_DATA')
+            col.label(text="  • ABR_Studio_Camera (Camera)", icon='CAMERA_DATA')
         if self.create_target_collection:
             col.label(text="• ABR_Products (Collection)", icon='OUTLINER_COLLECTION')
         if self.create_preview_collection:
@@ -251,17 +267,32 @@ class ZDC_OT_BatchRender_initialize_scene(bpy.types.Operator):
         layout.separator()
         layout.label(text="Existing assignments will not be changed.")
 
+    def _get_or_create_rig_collection(self, scene):
+        """Get or create the ABR_Rig collection for camera rig objects."""
+        rig_coll = bpy.data.collections.get("ABR_Rig")
+        if not rig_coll:
+            rig_coll = bpy.data.collections.new("ABR_Rig")
+            scene.collection.children.link(rig_coll)
+        elif rig_coll.name not in scene.collection.children:
+            scene.collection.children.link(rig_coll)
+        return rig_coll
+
     def execute(self, context):
         settings = context.scene.abr_settings
         scene = context.scene
         created_items = []
+
+        # Get or create the rig collection for controller + camera
+        rig_coll = None
+        if self.create_controller or self.create_studio_camera:
+            rig_coll = self._get_or_create_rig_collection(scene)
 
         # Create Camera Controller (Empty)
         if self.create_controller:
             controller = bpy.data.objects.new("ABR_Camera_Controller", None)
             controller.empty_display_type = 'PLAIN_AXES'
             controller.empty_display_size = 0.5
-            scene.collection.objects.link(controller)
+            rig_coll.objects.link(controller)
             settings.camera_controller = controller
             created_items.append("Camera Controller")
 
@@ -269,7 +300,7 @@ class ZDC_OT_BatchRender_initialize_scene(bpy.types.Operator):
         if self.create_studio_camera:
             cam_data = bpy.data.cameras.new("ABR_Studio_Camera")
             studio_camera = bpy.data.objects.new("ABR_Studio_Camera", cam_data)
-            scene.collection.objects.link(studio_camera)
+            rig_coll.objects.link(studio_camera)
             settings.studio_camera = studio_camera
             # Set as active camera if none exists
             if scene.camera is None:
@@ -326,7 +357,8 @@ class ZDC_OT_BatchRender_preview_framing(bpy.types.Operator):
         controller = s.camera_controller
 
         # Determine which collection to frame
-        collection = s.preview_collection
+        # Check preview_collection has actual objects; empty collection is not useful
+        collection = s.preview_collection if s.preview_collection and len(s.preview_collection.all_objects) > 0 else None
         if not collection:
             # Use first child of target collection, or target itself
             if s.target_collection and s.target_collection.children:
